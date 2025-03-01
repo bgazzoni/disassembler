@@ -278,12 +278,10 @@ async function isWordValid(word) {
       const data = await response.json();
       return Array.isArray(data); // If the word exists, the API returns an array
     } else if (currentLanguage === 'portuguese') {
-      // Use Dicionário Aberto API with a CORS proxy for Portuguese words
-      const proxyUrl = 'https://cors-anywhere.herokuapp.com/'; // CORS proxy
-      const apiUrl = `https://dicionario-aberto.net/search-json/${word}`;
-      const response = await fetch(proxyUrl + apiUrl);
+      const apiUrl = `https://en.wiktionary.org/w/api.php?action=query&list=search&srsearch=${word}&format=json`;
+      const response = await fetch(apiUrl);
       const data = await response.json();
-      return data.entry && data.entry.word === word.toLowerCase(); // Check if the word exists
+      return data.query.search.length > 0; // Check if the word exists
     }
   } catch (error) {
     console.error('Error validating word:', error);
