@@ -1,0 +1,131 @@
+body {
+  background-color: #181D28; /* New background color */
+  color: #181D28;
+  font-family: Helvetica, Arial, sans-serif;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  margin: 0;
+}
+
+#game-container {
+  text-align: center;
+}
+
+#long-word {
+  display: flex;
+  justify-content: center;
+  gap: 1%;
+  margin-bottom: 2%;
+}
+
+.tile {
+  background-color: #b0c2e8;
+  border: none;
+  border-radius: 10px;
+  width: 4vw;
+  height: 3vw;
+  display: flex;
+  position: relative;
+  align-items: center;
+  justify-content: center;
+  font-size: 2vw; 
+  font-weight: bold;
+  cursor: grab;
+	box-shadow: 0px 13px 0px 0px #737e96;
+}
+
+.word-slot {
+  display: flex;
+  gap: 1%;
+  margin-bottom: 2%;
+}
+
+.word-slot .letter-slot {
+  width: 3.2vw;
+  height: 3.2vw;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2vw;
+  color: #ccc;
+}
+
+#reset-button {
+  font-size: 50px; /* Larger font size */
+  color: #b0c2e8; /* Light blue color */
+  background: none; /* Remove background */
+  border: none; /* Remove border */
+  cursor: pointer; /* Pointer cursor on hover */
+  position: absolute; /* Position it absolutely */
+  top: calc(80%); /* 100px above the center of the screen */
+  left: 50%; /* Center horizontally */
+  padding: 0; /* Remove padding */
+  margin: 0; /* Remove margin */
+  z-index: 10; /* Ensure it's above other elements */
+}
+
+#reset-button:hover {
+  color: #8fa8d9; /* Slightly darker blue on hover */
+}
+
+.word-slot .tile {
+  display: flex;
+  transform: translateY(-5px);
+  color: #181D28;
+  gap: 1%;
+  margin-bottom: 2%;
+}
+
+.placeholder {
+  background-color:#b0c2e812; /* 20% opacity white */
+  border-radius: 10px;
+  width: 4vw;
+  height: 3.4vw;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2vw;
+  font-weight: bold;
+  color: #181D28; /* Semi-transparent text */
+  cursor: not-allowed; /* Indicate non-draggable */
+  margin: 0;
+}
+
+.word-slot .letter-slot {
+  background-color:#b0c2e812; /* 20% opacity white */
+  width: 3.29vw;
+  height: 3.2vw;
+  border: 2px solid #b0c2e840;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2vw;
+  color: #ccc;
+}
+
+.word-slot .letter-slot.filled {
+  border: 2px solid #b0c2e840;
+}
+
+#language-toggle {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+#toggle-language {
+  background-color: #b0c2e8;
+  color: #181D28;
+  border: none;
+  border-radius: 5px;
+  padding: 10px 20px;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+#toggle-language:hover {
+  background-color: #8fa8d9;
+}
