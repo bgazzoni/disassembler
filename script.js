@@ -6,6 +6,16 @@ let currentLevel = 0; // Track the current game level
 let gameData = []; // Store the loaded game data
 let currentLanguage = 'english'; // Default language
 
+// Function to check if the device is touch-enabled
+function isTouchDevice() {
+  return 'ontouchstart' in window || navigator.maxTouchPoints > 0 || navigator.msMaxTouchPoints > 0;
+}
+
+// Show the keyboard only on mobile devices
+if (isTouchDevice() && window.innerWidth <= 768) {
+  document.getElementById('keyboard').style.display = 'flex';
+}
+
 // Load the JSON file based on the current language
 function loadGameData() {
   const jsonFile = currentLanguage === 'english' ? 'words-en.json' : 'words-pt.json';
@@ -139,6 +149,9 @@ function handleBackspace() {
       if (placeholder) {
         longWordContainer.insertBefore(tileToMove, placeholder);
         placeholder.remove();
+      } else {
+        // If no placeholder exists, append the tile to the long word container
+        longWordContainer.appendChild(tileToMove);
       }
 
       // Revert the tile's background color to light blue
@@ -208,26 +221,78 @@ longWordContainer.addEventListener('drop', (e) => {
   const source = e.dataTransfer.getData('source');
   const index = e.dataTransfer.getData('index');
 
-  // Find the closest tile position in the long word
+  console.log('Tile dropped back into long word:', { letter, source, index });
+
+  // Handle tiles dragged from small words back to the long word
   if (source === 'word-slot') {
-    // Remove the tile from the small word's dashed space
-    const tileToRemove = document.querySelector(`.word-slot .tile[data-index="${index}"]`);
-    if (tileToRemove) {
-      // Move the tile back to the long word
+    // Find the tile being dragged
+    const tileToMove = document.querySelector(`.word-slot .tile[data-index="${index}"]`);
+    console.log('Tile to move:', tileToMove);
+
+    if (tileToMove) {
+      // Log the state of the long word container before re-insertion
+      console.log('Long word container before re-insertion:', longWordContainer.innerHTML);
+
+      // Remove the tile from the small word slot
+      tileToMove.remove();
+
+      // Find the placeholder in the long word container
       const placeholder = longWordContainer.querySelector(`.placeholder[data-index="${index}"]`);
+      console.log('Placeholder found:', placeholder);
+
       if (placeholder) {
-        // Reset the tile's background color to light blue
-        tileToRemove.style.backgroundColor = "#b0c2e8";
-        longWordContainer.insertBefore(tileToRemove, placeholder);
+        // Update the tile's data-source to "long-word"
+        tileToMove.dataset.source = 'long-word';
+
+        // Insert the tile back into its original position
+        longWordContainer.insertBefore(tileToMove, placeholder);
         placeholder.remove(); // Remove the placeholder
+      } else {
+        // If no placeholder exists, find the correct position to insert the tile
+        const tiles = Array.from(longWordContainer.children);
+        let insertBeforeNode = null;
+
+        // Find the correct position based on the tile's original index
+        for (let i = 0; i < tiles.length; i++) {
+          const tile = tiles[i];
+          if (tile.dataset.index > index) {
+            insertBeforeNode = tile;
+            break;
+          }
+        }
+
+        console.log('Insert before node:', insertBeforeNode);
+
+        // Update the tile's data-source to "long-word"
+        tileToMove.dataset.source = 'long-word';
+
+        // Insert the tile at the correct position
+        if (insertBeforeNode) {
+          longWordContainer.insertBefore(tileToMove, insertBeforeNode);
+        } else {
+          longWordContainer.appendChild(tileToMove);
+        }
       }
 
-      // Revert the letter slot to its original appearance
-      const originalSlot = tileToRemove.parentElement;
-      originalSlot.textContent = ""; // Clear the content
-      originalSlot.style.border = "2px solid #b0c2e840"; // Revert to solid border
-      originalSlot.style.backgroundColor = "#b0c2e812"; // Revert background
-      originalSlot.classList.remove('filled'); // Mark the slot as unfilled
+      // Log the re-inserted tile's class list and styles
+      console.log('Re-inserted tile class list:', tileToMove.classList);
+      console.log('Re-inserted tile styles:', tileToMove.style);
+
+      // Log the re-inserted tile's parent element
+      console.log('Re-inserted tile parent:', tileToMove.parentElement);
+
+      // Log the state of the long word container after re-insertion
+      console.log('Long word container after re-insertion:', longWordContainer.innerHTML);
+
+      // Force re-render the long word container
+      forceRerender(longWordContainer);
+
+      // Revert the small word slot to its original state
+      const originalSlot = tileToMove.parentElement;
+      if (originalSlot) {
+        originalSlot.textContent = ''; // Clear the content
+        originalSlot.classList.remove('filled'); // Mark the slot as unfilled
+      }
     }
   }
 });
@@ -269,7 +334,6 @@ async function validateWord(wordSlot) {
 }
 
 // Function to check if a word is valid
-// Function to check if a word is valid
 async function isWordValid(word) {
   try {
     if (currentLanguage === 'english') {
@@ -278,10 +342,24 @@ async function isWordValid(word) {
       const data = await response.json();
       return Array.isArray(data); // If the word exists, the API returns an array
     } else if (currentLanguage === 'portuguese') {
-      const apiUrl = `https://en.wiktionary.org/w/api.php?action=query&list=search&srsearch=${word}&format=json`;
-      const response = await fetch(apiUrl);
-      const data = await response.json();
-      return data.query.search.length > 0; // Check if the word exists
+      // Use Dicio.com.br for Portuguese words
+      const proxyUrl = 'https://api.allorigins.win/raw?url='; // CORS proxy
+      const apiUrl = `https://www.dicio.com.br/${word.toLowerCase()}/`;
+      const response = await fetch(proxyUrl + encodeURIComponent(apiUrl), {
+        method: 'HEAD' // Use HEAD request to fetch only headers
+      });
+
+      // Extract the final URL after redirects
+      const finalUrl = response.url;
+
+      // Check if the final URL contains "ocorreu-um-erro"
+      if (finalUrl.includes("ocorreu-um-erro")) {
+        console.log(`"${word}" is invalid.`);
+        return false;
+      } else {
+        console.log(`"${word}" is valid.`);
+        return true;
+      }
     }
   } catch (error) {
     console.error('Error validating word:', error);
@@ -311,8 +389,11 @@ async function checkWinCondition() {
     const allWordsValid = validationResults.every(isValid => isValid);
 
     if (allWordsValid) {
-      alert('Congratulations! You solved the puzzle!');
-      nextLevel(); // Move to the next level
+      // Add a 200ms delay before showing the alert
+      setTimeout(() => {
+        alert('Congratulations! You solved the puzzle!');
+        nextLevel(); // Move to the next level
+      }, 200); // 200ms delay
     }
   }
 }
@@ -339,6 +420,21 @@ toggleLanguageButton.addEventListener('click', () => {
     ? 'Switch to Portuguese'
     : 'Switch to English';
   loadGameData(); // Reload game data for the new language
+});
+
+// Add event listeners to the keyboard buttons
+document.querySelectorAll('.key').forEach(key => {
+  key.addEventListener('click', () => {
+    const letter = key.dataset.key;
+    if (letter) {
+      handleTypedLetter(letter);
+    }
+  });
+});
+
+// Add event listener for the backspace button
+document.getElementById('backspace').addEventListener('click', () => {
+  handleBackspace();
 });
 
 // Load initial game data
